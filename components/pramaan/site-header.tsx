@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ShieldCheck } from "lucide-react"
+import { Info, ShieldCheck } from "lucide-react"
 
 export function SiteHeader() {
   return (
@@ -11,7 +11,15 @@ export function SiteHeader() {
           </span>
           Pramaan
         </Link>
-        <p className="text-sm text-muted-foreground">Powered by Sarvam AI</p>
+        <nav aria-label="Primary navigation" className="flex items-center gap-1 text-sm">
+          <Link href="/" className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            Verify
+          </Link>
+          <Link href="/info" className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <Info className="size-4" aria-hidden="true" />
+            How it works
+          </Link>
+        </nav>
       </div>
     </header>
   )
