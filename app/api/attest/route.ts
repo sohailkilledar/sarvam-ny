@@ -33,19 +33,27 @@ export async function POST(request: Request) {
   if (!isLanguageCode(language)) return Response.json({ error: "Unsupported language." }, { status: 400 })
   if (!fields?.length) return Response.json({ error: "No document fields to compare against." }, { status: 400 })
 
-  const transcript = await transcribe(audio, language)
-  const [comparison, sanity, summary] = await Promise.all([
-    compareClaim(transcript.data, fields),
-    sanityCheck(fields),
-    summarize(fields, language),
-  ])
+  try {
+    const transcript = await transcribe(audio, language)
+    const [comparison, sanity, summary] = await Promise.all([
+      compareClaim(transcript.data, fields),
+      sanityCheck(fields),
+      summarize(fields, language),
+    ])
 
-  return Response.json({
-    transcript: transcript.data,
-    comparison: comparison.data,
-    sanity: sanity.data,
-    summary: summary.data,
-    trust: computeTrust(fields, comparison.data, sanity.data),
-    mock: [transcript, comparison, sanity, summary].some((r) => r.mock),
-  })
+    return Response.json({
+      transcript: transcript.data,
+      comparison: comparison.data,
+      sanity: sanity.data,
+      summary: summary.data,
+      trust: computeTrust(fields, comparison.data, sanity.data),
+      mock: [transcript, comparison, sanity, summary].some((r) => r.mock),
+    })
+  } catch (error) {
+    console.error("[attest] Sarvam attestation failed", error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Attestation service unavailable. Please try again." },
+      { status: 502 },
+    )
+  }
 }
