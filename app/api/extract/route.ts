@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[pramaan] document extraction request failed:", error instanceof Error ? error.message : error)
     return Response.json(
-      { error: "Document extraction failed. Verify SARVAM_API_KEY and try again." },
+      { error: "Document extraction failed. Verify API_KEY_SARVAM and try again." },
       { status: 502 },
     )
   }
