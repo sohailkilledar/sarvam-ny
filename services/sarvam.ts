@@ -115,7 +115,7 @@ export function extractFields(file: File): Promise<Result<ExtractedField[]>> {
       while (!TERMINAL.has(status)) {
         if (Date.now() > deadline) throw new Error("Extraction timed out")
         await sleep(1500)
-        status = (await sarvam.docAi.getStatus(job.job_id, REQUEST_OPTIONS)).status
+        status = (await sarvam.docAi.getStatus(job.job_id)).status
       }
       if (status === "failed" || status === "rejected") throw new Error(`Extraction ${status}`)
       const raw = (await sarvam.docAi.getResults(job.job_id, { format: "json" }, REQUEST_OPTIONS)) as unknown as {
