@@ -32,15 +32,31 @@ export function VoiceStep({ fields, language, onLanguage, busy, onSubmit }: Prop
   async function start() {
     setMicError(null)
     try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        throw new Error("Recording is not supported in this browser")
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
+      const preferredType = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"]
+        .find((type) => MediaRecorder.isTypeSupported(type))
+      const recorder = new MediaRecorder(stream, preferredType ? { mimeType: preferredType } : undefined)
       const chunks: Blob[] = []
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
+      recorder.onerror = () => {
+        stream.getTracks().forEach((t) => t.stop())
+        setMicError("The recording could not be completed. Please try again or upload an audio file.")
+        setRecording(false)
+      }
       recorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop())
-        const type = recorder.mimeType || "audio/webm"
-        const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm"
-        setClip(new File([new Blob(chunks, { type })], `attestation.${ext}`, { type }))
+        const rawType = recorder.mimeType || preferredType || "audio/webm"
+        const type = rawType.split(";")[0].trim().toLowerCase()
+        const ext = type === "audio/mp4" ? "m4a" : type === "audio/ogg" ? "ogg" : "webm"
+        const blob = new Blob(chunks, { type })
+        if (!blob.size) {
+          setMicError("No audio was recorded. Please try again.")
+          return
+        }
+        setClip(new File([blob], `attestation.${ext}`, { type }))
       }
       recorder.start()
       recorderRef.current = recorder

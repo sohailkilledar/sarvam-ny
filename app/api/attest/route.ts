@@ -30,6 +30,7 @@ export async function POST(request: Request) {
 
   if (!(audio instanceof File) || audio.size === 0) return Response.json({ error: "Record your attestation first." }, { status: 400 })
   if (audio.size > 15 * 1024 * 1024) return Response.json({ error: "Recording is too long." }, { status: 400 })
+  if (!audio.type.startsWith("audio/")) return Response.json({ error: "Please upload a valid audio recording." }, { status: 400 })
   if (!isLanguageCode(language)) return Response.json({ error: "Unsupported language." }, { status: 400 })
   if (!fields?.length) return Response.json({ error: "No document fields to compare against." }, { status: 400 })
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[attest] Sarvam attestation failed", error)
     return Response.json(
-      { error: error instanceof Error ? error.message : "Attestation service unavailable. Please try again." },
+      { error: "Attestation could not be completed. Check the recording and try again." },
       { status: 502 },
     )
   }

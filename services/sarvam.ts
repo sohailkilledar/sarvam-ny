@@ -132,12 +132,23 @@ export function extractFields(file: File): Promise<Result<ExtractedField[]>> {
 
 /* ---------- Speech to text (Saaras v3) ---------- */
 
+const AUDIO_TYPES = new Set(["audio/webm", "audio/opus", "audio/wav", "audio/x-wav", "audio/mp3", "audio/mpeg", "audio/ogg", "audio/mp4"])
+
+function normalizeAudioFile(audio: File): File {
+  const type = audio.type.split(";")[0].trim().toLowerCase()
+  if (!AUDIO_TYPES.has(type)) throw new Error("Unsupported audio format. Use WebM, WAV, MP3, OGG, or MP4 audio.")
+  if (type === audio.type) return audio
+  const extension = type === "audio/wav" || type === "audio/x-wav" ? "wav" : type === "audio/ogg" ? "ogg" : type === "audio/mp4" ? "m4a" : type === "audio/webm" ? "webm" : type === "audio/opus" ? "opus" : "mp3"
+  return new File([audio], audio.name.replace(/\.[^.]+$/, "") + `.${extension}`, { type })
+}
+
 export function transcribe(audio: File, language: LanguageCode): Promise<Result<string>> {
   return withFallback(
     "transcribe",
     async () => {
+      const normalizedAudio = normalizeAudioFile(audio)
       const res = await getClient().speechToText.transcribe(
-        { file: audio, model: "saaras:v3", language_code: language },
+        { file: normalizedAudio, model: "saaras:v3", language_code: language },
         REQUEST_OPTIONS,
       )
       const text = res.transcript?.trim()
