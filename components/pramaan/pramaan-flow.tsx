@@ -12,6 +12,18 @@ import { leafHash, merkleRoot, sha256Bytes } from "@/lib/merkle"
 import type { ExtractedField, LanguageCode, LeafRecord, LedgerEntry } from "@/lib/types"
 
 type Step = "upload" | "review" | "attest" | "result" | "sealed"
+
+type ApiPayload = Record<string, any>
+
+async function readApiResponse(response: Response): Promise<ApiPayload> {
+  const body = await response.text()
+  if (!body.trim()) throw new Error(`Request failed (${response.status}). The service returned an empty response.`)
+  try {
+    return JSON.parse(body) as ApiPayload
+  } catch {
+    throw new Error(`Request failed (${response.status}). The service returned an invalid response.`)
+  }
+}
 const STEPS: { id: Step; label: string }[] = [
   { id: "upload", label: "Upload" },
   { id: "review", label: "Review" },
@@ -49,8 +61,8 @@ export function PramaanFlow() {
       const form = new FormData()
       form.append("document", file)
       const res = await fetch("/api/extract", { method: "POST", body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Extraction failed")
+      const data = await readApiResponse(res)
+      if (!res.ok) throw new Error(String(data.error ?? "Extraction failed"))
       setFields(data.fields)
       setMock((m) => m || data.mock)
       setStep("review")
@@ -76,10 +88,10 @@ export function PramaanFlow() {
       form.append("language", language)
       form.append("fields", JSON.stringify(fields))
       const res = await fetch("/api/attest", { method: "POST", body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Attestation failed")
-      setResult(data)
-      setMock((m) => m || data.mock)
+      const data = await readApiResponse(res)
+      if (!res.ok) throw new Error(String(data.error ?? "Attestation failed"))
+      setResult(data as AttestResult)
+      setMock((m) => m || Boolean(data.mock))
       setStep("result")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong")
@@ -120,8 +132,8 @@ export function PramaanFlow() {
           },
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Sealing failed")
+      const data = await readApiResponse(res)
+      if (!res.ok) throw new Error(String(data.error ?? "Sealing failed"))
       setEntry(data.entry)
       setStep("sealed")
     } catch (e) {
