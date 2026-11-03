@@ -20,8 +20,8 @@ async function withFallback<T>(name: string, live: () => Promise<T>, mock: () =>
   try {
     return { data: await live(), mock: false }
   } catch (error) {
-    console.error(`[pramaan] ${name} failed, using fallback:`, error instanceof Error ? error.message : error)
-    return { data: mock(), mock: true }
+    console.error(`[pramaan] ${name} failed:`, error instanceof Error ? error.message : error)
+    throw error
   }
 }
 

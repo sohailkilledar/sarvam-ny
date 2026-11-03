@@ -12,6 +12,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Only images or PDFs are supported." }, { status: 400 })
   if (file.size > MAX_BYTES) return Response.json({ error: "File must be under 10 MB." }, { status: 400 })
 
-  const { data, mock } = await extractFields(file)
-  return Response.json({ fields: data, mock })
+  try {
+    const { data, mock } = await extractFields(file)
+    return Response.json({ fields: data, mock })
+  } catch (error) {
+    console.error("[pramaan] document extraction request failed:", error instanceof Error ? error.message : error)
+    return Response.json(
+      { error: "Document extraction failed. Verify SARVAM_API_KEY and try again." },
+      { status: 502 },
+    )
+  }
 }
