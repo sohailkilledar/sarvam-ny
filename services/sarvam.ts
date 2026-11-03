@@ -7,8 +7,8 @@ const REQUEST_OPTIONS = { timeoutInSeconds: 45, maxRetries: 1 }
 
 let client: SarvamAIClient | null = null
 function getClient() {
-  const key = process.env.SARVAM_API_KEY
-  if (!key) throw new Error("SARVAM_API_KEY is not set")
+  const key = process.env.SARVAM_API_KEY ?? process.env.API_KEY
+  if (!key) throw new Error("SARVAM_API_KEY or API_KEY is not set")
   client ??= new SarvamAIClient({ apiSubscriptionKey: key })
   return client
 }
